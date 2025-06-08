@@ -1,0 +1,20 @@
+# Ignore version control
+.git
+.gitignore
+
+# Ignore local dependencies and build output
+vendor/
+build/
+bin/
+dist/
+*.exe
+*.out
+*.log
+
+# Ignore editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
