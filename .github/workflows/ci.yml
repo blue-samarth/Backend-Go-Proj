@@ -1,4 +1,4 @@
-name: continous integration
+name:  continuous integration
 on: 
     push:
         branches:
@@ -59,7 +59,6 @@ jobs:
         with:
           context: ./student-api
           push: false
-          file: ./student-api/Dockerfile
           build-args: |
             GOOS=linux
             GOARCH=amd64
