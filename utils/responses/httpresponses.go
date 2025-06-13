@@ -7,6 +7,14 @@ import (
 	"net/http"
 )
 
+func validateStatusCode(statusCode int) int {
+	if statusCode < 100 || statusCode > 599 {
+		return http.StatusInternalServerError // Default to 500 for invalid codes
+	}
+	return statusCode
+}
+
+
 func HTTPResponse(w http.ResponseWriter, r *http.Request, statusCode int, message string, data interface{}, details map[string]string) {
 	statusCode = validateStatusCode(statusCode)
 
@@ -87,10 +95,14 @@ func HTTPResponse(w http.ResponseWriter, r *http.Request, statusCode int, messag
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		defaultConfig.Logger.ErrorContext(ctx, "Failed to encode JSON response",
-			append(logAttrs, slog.Any("encoding_error", err))...)
-		return
-	}
+        attrs := append(logAttrs, slog.Any("encoding_error", err))
+        anyAttrs := make([]any, len(attrs))
+        for i, a := range attrs {
+            anyAttrs[i] = a
+        }
+        defaultConfig.Logger.ErrorContext(ctx, "Failed to encode JSON response", anyAttrs...)
+        return
+    }
 
 	logMessage := "HTTP response sent"
 	if statusCode >= 500 {
