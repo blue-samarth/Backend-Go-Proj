@@ -21,7 +21,7 @@ error()   { echo -e "${RED}[✗]${NC} [$(timestamp)] $*" >&2; }
 
 
 # === CONFIG ===
-TARGET="${TARGET:-Backend-Go-Project}"
+TARGET="${TARGET:-Backend-Go-Proj}"
 BINARY_NAME="backend"
 PORT=8080
 
@@ -30,8 +30,24 @@ MODE="server" # default
 for arg in "$@"; do
   case $arg in
     --debug) MODE="debug" ;;
-    --test)  MODE="test" ;;
+    --test) MODE="test" ;;
     --server) MODE="server" ;;
+    --port=*) PORT="${arg#*=}" ;;
+    --target=*) TARGET="${arg#*=}" ;;
+    --binary=*) BINARY_NAME="${arg#*=}" ;;
+    --help|-h)
+      echo "Usage: $0 [OPTIONS]"
+      echo ""
+      echo "Options:"
+      echo "  --debug           Run in debug mode (foreground)"
+      echo "  --test            Run tests only"
+      echo "  --server          Run the server (default)"
+      echo "  --port=PORT       Specify port (default: ${PORT})"
+      echo "  --target=DIR      Specify project directory (default: ${TARGET})"
+      echo "  --binary=NAME     Specify binary name (default: ${BINARY_NAME})"
+      echo "  -h, --help        Show this help message"
+      exit 0
+      ;;
     *)
       echo -e "\033[1;31m[✗] Unknown flag: $arg\033[0m" >&2
       exit 1
@@ -273,9 +289,12 @@ cleanup() {
   if [ -f "$BINARY_NAME" ]; then
     warn "Removing binary '$BINARY_NAME'..."
     rm -f "$BINARY_NAME"
+    warn "Removing .server.pid file..."
+    rm -f .server.pid
   fi
 
   log "Cleanup complete. Exiting script."
+  success "Server stopped and cleaned up successfully."
 }
 
 
