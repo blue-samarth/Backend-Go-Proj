@@ -19,22 +19,40 @@ warn()    { echo -e "${YELLOW}[!]${NC} [$(timestamp)] $*"; }
 error()   { echo -e "${RED}[✗]${NC} [$(timestamp)] $*" >&2; }
 
 
-# === HANDLE FLAGS ===
-DEBUG=false
-if [ "$1" == "--debug" ]; then
-  DEBUG=true
-  log "Debug mode enabled"
-fi
 
 # === CONFIG ===
-TARGET="${TARGET:-Backend-Go-Proj}"
+TARGET="${TARGET:-Backend-Go-Project}"
 BINARY_NAME="backend"
 PORT=8080
+
+MODE="server" # default
+
+for arg in "$@"; do
+  case $arg in
+    --debug) MODE="debug" ;;
+    --test)  MODE="test" ;;
+    --server) MODE="server" ;;
+    *)
+      echo -e "\033[1;31m[✗] Unknown flag: $arg\033[0m" >&2
+      exit 1
+      ;;
+  esac
+done
 
 log "Running script in directory: $(pwd)"
 log "Target directory: $TARGET"
 log "Binary name: $BINARY_NAME"
 log "Port: $PORT"
+
+
+
+
+
+# === Clean up old binary if exists ===
+if [ -f "$BINARY_NAME" ]; then
+  warn "Removing existing binary '$BINARY_NAME'..."
+  rm "$BINARY_NAME"
+fi
 
 
 # === Ensure Go is installed ===
@@ -215,10 +233,25 @@ if [ "$(printf '%s\n' "$REQUIRED" "$INSTALLED" | sort -V | head -n1)" != "$REQUI
   exit 1
 fi
 
+# === Run tests if --test flag is provided ===
+if [ "$MODE" = "test" ]; then
+  log "Running tests..."
+  if ! "$GO_CMD" test ./... -v -count=1; then
+    error "Tests failed. Aborting."
+    exit 1
+  fi
+  success "All tests passed"
+  exit 0
+fi
+
+success "The Test passed successfully"
+
 
 # === Build ===
 log "Building the project..."
 "$GO_CMD" build -o "$BINARY_NAME" main.go
+
+success "Build completed successfully"
 
 
 # === Check if build was successful ===
@@ -227,6 +260,8 @@ if [ ! -f "$BINARY_NAME" ]; then
   exit 1
 fi
 
+success "Build successful - binary '$BINARY_NAME' created"
+
 
 # === Cleanup on exit ===
 cleanup() {
@@ -234,17 +269,24 @@ cleanup() {
     warn "Killing background server (PID $SERVER_PID)..."
     kill "$SERVER_PID" 2>/dev/null || true
   fi
+
+  if [ -f "$BINARY_NAME" ]; then
+    warn "Removing binary '$BINARY_NAME'..."
+    rm -f "$BINARY_NAME"
+  fi
+
   log "Cleanup complete. Exiting script."
 }
-trap cleanup EXIT
 
 
 # === Run the server ===
 if [ "$DEBUG" = true ]; then
-  ./"$BINARY_NAME"
+  trap cleanup EXIT
+  ./"$BINARY_NAME"  # foreground mode; script stays attached
 else
   ./"$BINARY_NAME" &> /dev/null &
   SERVER_PID=$!
-  sleep 0.1
+  echo "$SERVER_PID" > .server.pid
   success "Server is running in background (PID $SERVER_PID). Use '--debug' to see logs."
+  trap cleanup EXIT
 fi
