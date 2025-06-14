@@ -21,7 +21,7 @@ error()   { echo -e "${RED}[✗]${NC} [$(timestamp)] $*" >&2; }
 
 
 # === CONFIG ===
-TARGET="${TARGET:-Backend-Go-Project}"
+TARGET="${TARGET:-Backend-Go-Proj}"
 BINARY_NAME="backend"
 PORT=8080
 
@@ -273,9 +273,12 @@ cleanup() {
   if [ -f "$BINARY_NAME" ]; then
     warn "Removing binary '$BINARY_NAME'..."
     rm -f "$BINARY_NAME"
+    warn "Removing .server.pid file..."
+    rm -f .server.pid
   fi
 
   log "Cleanup complete. Exiting script."
+  success "Server stopped and cleaned up successfully."
 }
 
 

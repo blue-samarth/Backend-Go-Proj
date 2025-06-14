@@ -28,4 +28,7 @@ Thumbs.db
 
 # Test output
 *.out
-coverage.*
+coverage.*.go-bin/
+
+# Temporary files
+.go-bin/
