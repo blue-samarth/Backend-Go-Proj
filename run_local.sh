@@ -280,7 +280,7 @@ cleanup() {
 
 
 # === Run the server ===
-if [ "$DEBUG" = true ]; then
+if [ "$MODE" = "debug" ]; then
   trap cleanup EXIT
   ./"$BINARY_NAME"  # foreground mode; script stays attached
 else
